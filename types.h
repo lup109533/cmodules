@@ -1,7 +1,10 @@
 #ifndef __CMODULES_TYPES__
 #define __CMODULES_TYPES__
 
-#include <stdint>
+// Standard cmodules types
+
+#include <stdint.h>
+#include <stdbool.h> // Include bool types and true/false macros
 
 typedef int8_t   s8;
 typedef int16_t  s16;
