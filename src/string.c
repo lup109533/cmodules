@@ -1,13 +1,14 @@
 #include <stdlib.h>
 
 struct __cmodules_string_library string = {
-	.new = &new,
-	.del = &del,
+	.new   = &__cmodules_string_new,
+	.del   = &__cmodules_string_del,
+	.alloc = &__cmodules_string_alloc,
 };
 
-String new(const Char* s) {
+String __cmodules_string_new(const Char* s) {
 
-#if __CMODULES_ERROR_CHECK == true
+#ifdef __CMODULES_ERROR_CHECK
 	if ((cerror = (s != NULL) ? NO_ERROR : NULL_ARGUMENT) != NO_ERROR)
 		return NULL;
 #endif
@@ -15,14 +16,14 @@ String new(const Char* s) {
 	size_t len = wcslen(s);
 	Char* str = calloc(len+1, sizeof(Char));
 
-#if __CMODULES_ERROR_CHECK == true
+#ifdef __CMODULES_ERROR_CHECK
 	if ((cerror = (str != NULL) ? NO_ERROR : MALLOC_FAILURE) != NO_ERROR)
 		return NULL;
 #endif
 
 	String S = malloc(sizeof(struct __cmodules_string));
 
-#if __CMODULES_ERROR_CHECK == true
+#ifdef __CMODULES_ERROR_CHECK
 	if ((cerror = (S != NULL) ? NO_ERROR : MALLOC_FAILURE) != NO_ERROR)
 	{
 		free(str);
@@ -30,15 +31,15 @@ String new(const Char* s) {
 	}
 #endif
 
-	cval(S) = strcpy(str, s);
+	cval(S) = wcscpy(str, s);
 	clen(S) = len;
 
 	return S;
 }
 
-Error del(String S) {
+Error __cmodules_string_del(String S) {
 
-#if __CMODULES_ERROR_CHECK == true
+#ifdef __CMODULES_ERROR_CHECK
 	if ((cerror = (S != NULL) ? NO_ERROR : NULL_ARGUMENT) != NO_ERROR)
 		return cerror;
 #endif
@@ -46,9 +47,30 @@ Error del(String S) {
 	free(cval(S));
 	free(S);
 
-#if __CMODULES_ERROR_CHECK == true
+#ifdef __CMODULES_ERROR_CHECK
 	return (cerror = NO_ERROR);
 #else
 	return NO_ERROR;
 #endif
+};
+
+String __cmodules_string_alloc(size_t n) {
+	Char* str = calloc(n+1, sizeof(Char));
+
+#ifdef __CMODULES_ERROR_CHECK
+	if ((cerror = (str != NULL) ? NO_ERROR : MALLOC_FAILURE) != NO_ERROR)
+		return NULL;
+#endif
+
+	String S = malloc(sizeof(struct __cmodules_string));
+
+#ifdef __CMODULES_ERROR_CHECK
+	if ((cerror = (S != NULL) ? NO_ERROR : MALLOC_FAILURE) != NO_ERROR)
+		return NULL;
+#endif
+
+	cval(S) = str;
+	clen(S) = n;
+
+	return S;
 };

@@ -1,9 +1,7 @@
 #ifndef __CMODULES_ERROR___
 #define __CMODULES_ERROR___
 
-#include <stdbool.h>
-
-#define __CMODULES_ERROR_CHECK true
+#define __CMODULES_ERROR_CHECK
 
 enum __cmodules_error {
 	NO_ERROR,

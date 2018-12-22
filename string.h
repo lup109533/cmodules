@@ -11,12 +11,14 @@ struct __cmodules_string {
 };
 typedef struct __cmodules_string* String;
 
-inline String new(const Char*);
-inline Error  del(String);
+String __cmodules_string_new   (const Char*);
+Error  __cmodules_string_del   (String);
+String __cmodules_string_alloc (size_t);
 
 struct __cmodules_string_library {
-	String (*new)(const Char*);
-	Error  (*del)(String);
+	String (*new)   (const Char*);
+	Error  (*del)   (String);
+	String (*alloc) (size_t);
 };
 
 extern struct __cmodules_string_library string;

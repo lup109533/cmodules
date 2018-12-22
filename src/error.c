@@ -1,1 +1,1 @@
-Error __cmodules_error_var = NONE;
+Error __cmodules_error_var = NO_ERROR;

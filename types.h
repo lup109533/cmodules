@@ -1,7 +1,7 @@
 #ifndef __CMODULES_TYPES__
 #define __CMODULES_TYPES__
 
-// Standard cmodules types
+/*** Standard cmodules types ***/
 
 #include <stdint.h>
 #include <stdbool.h> // Include bool types and true/false macros
