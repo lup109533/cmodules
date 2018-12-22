@@ -1,8 +1,12 @@
 #ifndef __CMODULES_ERROR___
 #define __CMODULES_ERROR___
 
+#include <stdbool.h>
+
+#define __CMODULES_ERROR_CHECK true
+
 enum __cmodules_error {
-	NONE,
+	NO_ERROR,
 	MALLOC_FAILURE,
 	NULL_ARGUMENT,
 };

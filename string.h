@@ -1,20 +1,21 @@
 #ifndef __CMODULES_STRING__
 #define __CMODULES_STRING__
 
+#include "types.h"
 #include "macro.h"
 #include "error.h"
 
 struct __cmodules_string {
-	char* val;
+	Char* val;
 	size_t len;
 };
 typedef struct __cmodules_string* String;
 
-inline String new(const char*);
+inline String new(const Char*);
 inline Error  del(String);
 
 struct __cmodules_string_library {
-	String (*new)(const char*);
+	String (*new)(const Char*);
 	Error  (*del)(String);
 };
 
