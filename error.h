@@ -7,6 +7,7 @@ enum __cmodules_error {
 	NO_ERROR,
 	MALLOC_FAILURE,
 	NULL_ARGUMENT,
+	BOUNDS_VIOLATION,
 };
 
 typedef enum __cmodules_error Error;
