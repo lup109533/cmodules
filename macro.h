@@ -3,40 +3,62 @@
 
 /*** Macro definitions used throughout cmodules ***/
 
-// Common numeric values
-#define NOT_FOUND -1
+#define cmodules_config(conf, val) __cmodules_config_ ## conf = (val)
+
+// Useful shorthands
+#define elif else if
+#define and &&
+#define or  ||
+#define not !
+#define alloc(T)    malloc(sizeof(T))
+#define alloc_array(T,N) calloc(sizeof(T), (N))
+#define alloc_string(N) alloc_array(char, (N)+1)
 
 // Variadic macro helpers
-#define VA_NARGS(...) ((int)(sizeof((int[]){__VA_ARGS__})/sizeof(int)))
-
-// Structure value, length and size access
-#define cval(x) x->val
-#define clen(x) x->len
-#define cmem(x) x->mem
+#define __VA_NARGS__(...)  ((int)(sizeof((int[]){__VA_ARGS__})/sizeof(int)))     // for scalars
+#define __VA_NPARGS__(...) ((int)(sizeof((void*[]){__VA_ARGS__})/sizeof(void*))) // for pointers
 
 // Common operations
-#define min(x,y) ((x < y) ? x : y)
-#define max(x,y) ((x > y) ? x : y)
-#define clamp(x,a,b) ((x > a) ? a : ((x < b) ? b : x)
+#define min(x,y) ((x) < (y) ? (x) : (y))
+#define max(x,y) ((x) > (y) ? (x) : (y))
+#define clamp(x,a,b) ((x) > (a) ? (a) : ((x) < (b) ? (b) : (x))
 
-// Iterators and loops
-typedef signed long __cmodules_loop_cnt_t;
-#define for_range(cnt,target,step)        for(__cmodules_loop_cnt_t cnt = 0;     cnt < target; cnt += step)
-#define for_reverse_range(cnt,start,step) for(__cmodules_loop_cnt_t cnt = start; cnt > 0;      cnt -= step)
+// Bit manipulation
+#define _0b(n) __cmodules__0b(#n, sizeof(#n))
+unsigned __cmodules__0b(const char* bit, unsigned len) {
+    unsigned result = 0;
+    for (unsigned i = len-1; (i+1) > i; i--) {
+        if (bit[i] == '0') {
+            result <<= 1;
+        }
+        elif (bit[i] == '1') {
+            result <<= 1;
+            result += 1;
+        }
+    }
 
-#define foreach(elem,iter) for (typeof(cval(iter)) elem = iter_beg(iter); iter_end(iter,elem); iter_next(iter,elem))
-	
-#define iter_beg(I) _Generic((I), \
-                          String: cval(I), \
-						 default: ""\
-						 )
-#define iter_end(I,E) _Generic((I), \
-                            String: *E != L'\0', \
-						   default: ""\
-						   )
-#define iter_next(I,E) _Generic((I), \
-                             String: E++, \
-						    default: ""\
-						    )
+    return result;
+}
+#define lsb(T,n) ((T) __cmodules_lsbs(n))
+unsigned __cmodules_lsbs(unsigned n) {
+    if (n == 0)
+        return 0;
+
+    unsigned result = 1;
+    for (unsigned i = 1; i < n && i < 8*sizeof(void*); i++) {
+        result <<= 1;
+        result += 1;
+    }
+
+    return result;
+}
+#define msb(T,n) (T) ~(lsb(T, max(8*sizeof(T) - n, 0)))
+
+// Casts
+// Interpret cast(T, X)
+// Interprets the given binary data X as type T.
+#define icast(T, X) (((T*) ((typeof(X)[]){X}))[0])
+
+#define bcast(T, X) (((T)(X)) & lsb(T, 8*sizeof(typeof(X))))
 
 #endif

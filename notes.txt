@@ -1,0 +1,115 @@
+string s = new(string); // utf8
+add(s, "Hello!");
+list   l = new(list);
+
+add(l, 1);
+...
+add(l, 10);
+
+for_each(e,l) {
+	print("{}\n", e);
+}
+
+dict d = new(dict);
+
+add(d,"John Smith", 34);
+print("{}\n", getval(d,"John Smith")); // "34"
+
+map(s, to_lower); // "hello!"
+/***
+bool my_func(s64 i) {
+	return i > 5;
+}
+***/
+filter(l, my_func);
+print("{}\n", l); // "[6, 7, 8, 9, 10]"
+
+rem(d, "John Smith"); // removes element associated to key "John Smith", i.e. 34
+del(d);               // d is no longer in memory
+rem(l,0);             // removes element at index 0, i.e. 6
+
+string n = slice(s,0,4); // n is "Hell"
+
+string s2 = copy(s); // s2 is a deep copy of s
+
+rem(s,len(s)-1) // removes the last character of s
+cat(s,s2);      // concatenates s to s2 -> s = "hello!Hello!"
+
+print("{}\nLength: {}\nSize: {}\n", s, len(s), size(s));
+
+file f = new(file);
+open(f, "myfile.bin", bw);
+for_each(e,l) {
+	write(f, "{}", e);
+}
+close(f);
+
+clear(s); // no more text
+open(f, "myfile.bin", r);
+dump(f, s); // contents of f in s
+
+seek(f, file_start);
+for_scan(cur,f) {
+	print("{} ", cur);
+}
+close(f);
+
+with(f, "somefile.txt", w) {
+	// do something
+} end_with(f);
+
+stack stk = new(stack);
+add(stk, "!");
+add(stk, "world");
+add(stk, "Hello ");
+
+while (!empty(stk)) {
+	print("{}", pop(stk)); // "Hello world!"
+}
+println("");
+
+fifo q = new(fifo);
+add(q, "Hello ");
+add(q, "world");
+add(q, "!");
+
+while (!empty(q)) {
+	print("{}", pop(q)); // "Hello world!"
+}
+println("");
+
+array a = new(array, s32, 10);
+for_range(i,10,1) {
+	setval(a, i, i);
+}
+
+set myset = new(set);
+add(myset, new(string, "Wello!")); // ["Wello!"]
+add(myset, new(string, "Hello!")); // ["Wello!", "Hello!"]
+add(myset, new(string, "Wello!")); // ["Wello!", "Hello!"]
+
+raw_string set_repr = repr(myset); // "["Wello!", "Hello!"]"
+raw_string set_fmt  = fmt(myset, "sep=;", "delim="); // ""Wello!"; "Hello!""
+
+////////////
+#include "linear.h"
+
+vector2 v2 = {.x = 1, .y = 2};         // 2D vector
+vector3 v3 = {.x = 1, .y = 2, .z = 3}; // 3D vector
+matrix  M  = new(matrix, 2, 2);        // 2x2 matrix
+
+matrix_entries(M,
+	0, 1,
+	1, 0
+)
+
+s64 p = scalar_product(v2, v2); // sqrt((1+1)^2 + (2+2)^2) = sqrt(20)
+del(M);
+M = vector_product(v2, v2); // 2x2 matrix
+
+ivector2 iv2 = {0, 1}; // 2D integer vector
+imatrix  iM1 = new(imatrix, 2, 3);
+imatrix  iM2 = new(imatrix, 3, 2);
+
+imatrix iM3 = vector_product(iM1, iM2); // 2x2 matrix
+imatrix iM4 = vector_product(iM2, iM2); // 3x3 matrix

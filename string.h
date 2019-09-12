@@ -9,14 +9,6 @@
 /*** (UTF-16 or UTF-32 in virtually all cases), the io library will convert this representation ***/
 /*** to UTF-8.                                                                                  ***/
 
-// String
-struct __cmodules_string {
-	Char*  val;
-	size_t len;
-	size_t mem;
-};
-typedef struct __cmodules_string* String;
-
 String __cmodules_string_new      (const Char*);
 Error  __cmodules_string_del      (String);
 Error  __cmodules_string_set      (String, const Char*);

@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <wctype.h>
 
@@ -23,37 +22,62 @@ struct __cmodules_string_library string = {
 	.filter   = &__cmodules_string_filter,
 	.map      = &__cmodules_string_map,
 };
+inline Char __cmodules_get_string(String S, size_t pos) {
+    #ifdef __CMODULES_ERROR_CHECK
+	if (pos >= clen(S)) {
+		cerror = BOUNDS_VIOLATION;
+		return cval(S)[0];
+	}
+    #endif
+	return cval(S)[pos];
+}
+inline Char* __cmodules_iter_beg_string(String S) {
+	return chead(S);
+}
+inline Char* __cmodules_iter_end_string(String S) {
+	return cval(S) + clen(S);
+}
+inline Char* __cmodules_iter_next_string(Char* C) {
+	return C + 1;
+}
 
 /*************************/
 /*** Create new String ***/
 /*************************/
 String __cmodules_string_new(const Char* s) {
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if ((cerror = (s != NULL) ? NO_ERROR : NULL_ARGUMENT) != NO_ERROR)
 		return NULL;
-#endif
+    #endif
 
 	size_t len = wcslen(s);
-	Char* str = calloc(len+1, sizeof(Char));
-#ifdef __CMODULES_ERROR_CHECK
+	#ifndef __CMODULES_STRING_BUFFER_SIZE
+	Char*  str = calloc(len+1, sizeof(Char));
+	size_t mem = (len+1)*sizeof(Char);
+	#else
+	Char* str = calloc(__CMODULES_STRING_BUFFER_SIZE+1, sizeof(Char));
+	size_t mem = (__CMODULES_STRING_BUFFER_SIZE+1)*sizeof(Char);
+	#endif
+
+    #ifdef __CMODULES_ERROR_CHECK
 	if ((cerror = (str != NULL) ? NO_ERROR : MALLOC_FAILURE) != NO_ERROR)
 		return NULL;
-#endif
+    #endif
 
 	String S = malloc(sizeof(struct __cmodules_string));
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if ((cerror = (S != NULL) ? NO_ERROR : MALLOC_FAILURE) != NO_ERROR)
 	{
 		free(str);
 		return NULL;
 	}
-#endif
+    #endif
 
 	wcscpy(str, s);
 	cval(S) = str;
 	clen(S) = len;
-	cmem(S) = (len+1)*sizeof(Char);
+	cmem(S) = mem;
 
 	return S;
 }
@@ -64,19 +88,19 @@ String __cmodules_string_new(const Char* s) {
 
 Error __cmodules_string_del(String S) {
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if ((cerror = (S != NULL) ? NO_ERROR : NULL_ARGUMENT) != NO_ERROR)
 		return cerror;
-#endif
+    #endif
 
 	free(cval(S));
 	free(S);
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	return (cerror = NO_ERROR);
-#else
+    #else
 	return NO_ERROR;
-#endif
+    #endif
 };
 
 /**************************************************************/
@@ -84,21 +108,21 @@ Error __cmodules_string_del(String S) {
 /**************************************************************/
 Error __cmodules_string_set(String S, const Char* s) {
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if (cval(S) == NULL || s == NULL)
 		return (cerror = NULL_ARGUMENT);
-#endif
+    #endif
 
 	wmemset(cval(S), L'\0', clen(S));
 
 	size_t newlen = wcslen(s);
 	size_t newmem = (newlen+1)*sizeof(Char);
 	if (newmem > cmem(S)) {
-		Char* str = calloc(newlen, sizeof(Char));
-	#ifdef __CMODULES_ERROR_CHECK
+		Char* str = calloc(cmem(S)*2-1, sizeof(Char));
+        #ifdef __CMODULES_ERROR_CHECK
 		if ((cerror = (str != NULL) ? NO_ERROR : MALLOC_FAILURE) != NO_ERROR)
 			return cerror;
-	#endif
+        #endif
 		free(cval(S));
 		cval(S) = str;
 		cmem(S) = newmem;
@@ -106,11 +130,11 @@ Error __cmodules_string_set(String S, const Char* s) {
 	wcscpy(cval(S), s);
 	clen(S) = newlen;
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	return (cerror = NO_ERROR);
-#else
+    #else
 	return NO_ERROR;
-#endif
+    #endif
 };
 
 /***********************************/
@@ -118,25 +142,25 @@ Error __cmodules_string_set(String S, const Char* s) {
 /***********************************/
 String __cmodules_string_copy(String S) {
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if ((cerror = (S != NULL) ? NO_ERROR : NULL_ARGUMENT) != NO_ERROR)
 		return NULL;
-#endif
+    #endif
 
 	Char* str = malloc(cmem(S));
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if ((cerror = (str != NULL) ? NO_ERROR : MALLOC_FAILURE) != NO_ERROR)
 		return NULL;
-#endif
+    #endif
 
 	String S2 = malloc(sizeof(struct __cmodules_string));
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if ((cerror = (S != NULL) ? NO_ERROR : MALLOC_FAILURE) != NO_ERROR)
 	{
 		free(str);
 		return NULL;
 	}
-#endif
+    #endif
 
 	wcscpy(str, cval(S));
 	cval(S2) = str;
@@ -151,38 +175,45 @@ String __cmodules_string_copy(String S) {
 /****************************************************************************/
 String __cmodules_string_slice(String S, size_t a, size_t b) {
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if ((cerror = (S != NULL) ? NO_ERROR : NULL_ARGUMENT) != NO_ERROR)
 		return NULL;
-#endif
+    #endif
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if (a > b || a > clen(S) || b > clen(S)) {
 		cerror = BOUNDS_VIOLATION;
 		return NULL;
 	}
-#endif
+    #endif
 
 	size_t len = (b - a) + 1;
-	Char* str = calloc(len+1, sizeof(Char));
-#ifdef __CMODULES_ERROR_CHECK
+	#ifndef __CMODULES_STRING_BUFFER_SIZE
+	Char*  str = calloc(len+1, sizeof(Char));
+	size_t mem = (len+1)*sizeof(Char);
+    #else
+	Char* str = calloc(__CMODULES_STRING_BUFFER_SIZE+1, sizeof(Char));
+	size_t mem = (__CMODULES_STRING_BUFFER_SIZE+1)*sizeof(Char);
+	#endif
+
+    #ifdef __CMODULES_ERROR_CHECK
 	if ((cerror = (str != NULL) ? NO_ERROR : MALLOC_FAILURE) != NO_ERROR)
 		return NULL;
-#endif
+    #endif
 
 	String sub = malloc(sizeof(struct __cmodules_string));
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if ((cerror = (sub != NULL) ? NO_ERROR : MALLOC_FAILURE) != NO_ERROR)
 	{
 		free(str);
 		return NULL;
 	}
-#endif
+    #endif
 
 	wcsncpy(str, cval(S)+a, len);
 	cval(sub) = str;
 	clen(sub) = len;
-	cmem(sub) = (len+1)*sizeof(Char);
+	cmem(sub) = mem;
 
 	return sub;
 };
@@ -193,16 +224,16 @@ String __cmodules_string_slice(String S, size_t a, size_t b) {
 String __cmodules_string_alloc(size_t n) {
 
 	Char* str = calloc(n+1, sizeof(Char));
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if ((cerror = (str != NULL) ? NO_ERROR : MALLOC_FAILURE) != NO_ERROR)
 		return NULL;
-#endif
+    #endif
 
 	String S = malloc(sizeof(struct __cmodules_string));
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if ((cerror = (S != NULL) ? NO_ERROR : MALLOC_FAILURE) != NO_ERROR)
 		return NULL;
-#endif
+    #endif
 
 	cval(S) = str;
 	clen(S) = 0;
@@ -216,48 +247,48 @@ String __cmodules_string_alloc(size_t n) {
 /********************************************************************/
 Error __cmodules_string_resize(String S, size_t n) {
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if (cval(S) == NULL)
 		return (cerror = NULL_ARGUMENT);
-#endif
+    #endif
 
 	Char* str = calloc(n+1, sizeof(Char));
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if ((cerror = (str != NULL) ? NO_ERROR : MALLOC_FAILURE) != NO_ERROR)
 		return cerror;
-#endif
+    #endif
 
 	wcsncpy(str, cval(S), min(n,clen(S)));
 	free(cval(S));
 	cval(S) = str;
 	cmem(S) = (n+1)*sizeof(Char);
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	return (cerror = NO_ERROR);
-#else
+    #else
 	return NO_ERROR;
-#endif
+    #endif
 };
 
-/**********************************************************/
-/*** Convert all characters int the String to lowercase ***/
-/**********************************************************/
+/*********************************************************/
+/*** Convert all characters in the String to lowercase ***/
+/*********************************************************/
 Error __cmodules_string_to_lower(String S) {
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if (cval(S) == NULL)
 		return (cerror = NULL_ARGUMENT);
-#endif
+    #endif
 
 	for_range(i,clen(S),1) {
 		cval(S)[i] = towlower(cval(S)[i]);
 	}
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	return (cerror = NO_ERROR);
-#else
+    #else
 	return NO_ERROR;
-#endif
+    #endif
 };
 
 /**********************************************************/
@@ -265,20 +296,20 @@ Error __cmodules_string_to_lower(String S) {
 /**********************************************************/
 Error __cmodules_string_to_upper(String S) {
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if (cval(S) == NULL)
 		return (cerror = NULL_ARGUMENT);
-#endif
+    #endif
 
 	for_range(i,clen(S),1) {
 		cval(S)[i] = towupper(cval(S)[i]);
 	}
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	return (cerror = NO_ERROR);
-#else
+    #else
 	return NO_ERROR;
-#endif
+    #endif
 };
 
 /*********************************************************************************/
@@ -286,10 +317,10 @@ Error __cmodules_string_to_upper(String S) {
 /*********************************************************************************/
 Error __cmodules_string_strip(String S) {
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if (cval(S) == NULL || clen(S) == 0)
 		return (cerror = NULL_ARGUMENT);
-#endif
+    #endif
 
 	Char* old = cval(S);
 	size_t a = 0;
@@ -307,23 +338,22 @@ Error __cmodules_string_strip(String S) {
 
 	size_t newlen = b - a;
 	if (newlen < clen(S)) {
-		Char* str = calloc(newlen, sizeof(Char));
-	#ifdef __CMODULES_ERROR_CHECK
+		Char* str = calloc(cmem(S), sizeof(Char));
+        #ifdef __CMODULES_ERROR_CHECK
 		if ((cerror = (str != NULL) ? NO_ERROR : MALLOC_FAILURE) != NO_ERROR)
 			return cerror;
-	#endif
+        #endif
 		wcsncpy(str, cval(S)+a, (b-a));
 		free(cval(S));
 		cval(S) = str;
 		clen(S) = newlen;
-		cmem(S) = (newlen+1)*sizeof(Char);
 	}
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	return (cerror = NO_ERROR);
-#else
+    #else
 	return NO_ERROR;
-#endif
+    #endif
 };
 
 /************************************************/
@@ -331,10 +361,10 @@ Error __cmodules_string_strip(String S) {
 /************************************************/
 Error __cmodules_string_replace(String S, const Char* s1, const Char* s2) {
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if (cval(S) == NULL || s1 == NULL || s2 == NULL)
 		return (cerror = NULL_ARGUMENT);
-#endif
+    #endif
 
 	Char*  str     = NULL;
 	size_t s1_len  = wcslen(s1);
@@ -349,25 +379,25 @@ Error __cmodules_string_replace(String S, const Char* s1, const Char* s2) {
 		if (n == s1_len) {
 			if (str == NULL) {
 				str = calloc(str_mem, sizeof(Char));
-			#ifdef __CMODULES_ERROR_CHECK
+                #ifdef __CMODULES_ERROR_CHECK
 				if ((cerror = (str != NULL) ? NO_ERROR : MALLOC_FAILURE) != NO_ERROR)
 					return cerror;
-			#endif
+                #endif
 				wcsncpy(str, cval(S), i);
 			}
 			newlen = (newlen - s1_len) + s2_len;
 			if ((newlen+1)*sizeof(Char) > str_mem) {
-			#ifdef __CMODULES_ERROR_CHECK
+                #ifdef __CMODULES_ERROR_CHECK
 				Char* old = str;
-			#endif
+                #endif
 				str_mem = sizeof(Char)*(newlen+1);
 				str = realloc(str, str_mem);
-			#ifdef __CMODULES_ERROR_CHECK
+                #ifdef __CMODULES_ERROR_CHECK
 				if ((cerror = (str == old) ? NO_ERROR : MALLOC_FAILURE) != NO_ERROR) {
 					free(str);
 					return cerror;
 				}
-			#endif
+                #endif
 				str[newlen] = L'\0';
 			}
 			wcsncpy(str+j, s2, s2_len);
@@ -388,11 +418,11 @@ Error __cmodules_string_replace(String S, const Char* s1, const Char* s2) {
 		cmem(S) = str_mem;
 	}
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	return (cerror = NO_ERROR);
-#else
+    #else
 	return NO_ERROR;
-#endif
+    #endif
 }
 
 /********************************************************************************************/
@@ -400,12 +430,12 @@ Error __cmodules_string_replace(String S, const Char* s1, const Char* s2) {
 /********************************************************************************************/
 size_t __cmodules_string_search(String S, const Char* s, size_t pos) {
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if (S == NULL || s == NULL)
 		return (cerror = NULL_ARGUMENT);
 	if (pos > clen(S)-1)
 		return (cerror = BOUNDS_VIOLATION);
-#endif
+    #endif
 
 	size_t s_len = wcslen(s);
 	for_range(cur,clen(S),1) {
@@ -418,7 +448,7 @@ size_t __cmodules_string_search(String S, const Char* s, size_t pos) {
 				return cur;
 		}
 	}
-	
+
 	return NOT_FOUND;
 }
 
@@ -426,25 +456,25 @@ size_t __cmodules_string_search(String S, const Char* s, size_t pos) {
 /*** Returns true if String S is equal to s, else returns false ***/
 /******************************************************************/
 bool __cmodules_string_equals(String S, const Char* s) {
-	
-#ifdef __CMODULES_ERROR_CHECK
+
+    #ifdef __CMODULES_ERROR_CHECK
 	if (S == NULL || s == NULL) {
 		cerror = NULL_ARGUMENT;
 		return false;
 	}
-#endif
+    #endif
 
 	size_t s_len = wcslen(s);
 	if (s_len != clen(S))
 		return false;
-	
+
 	size_t n = 0;
 	while (cval(S)[n] == s[n] && n < clen(S))
 		n++;
-	
+
 	if (n == clen(S))
 		return true;
-	
+
 	return false;
 }
 
@@ -452,20 +482,20 @@ bool __cmodules_string_equals(String S, const Char* s) {
 /*** Concatenates s to String S ***/
 /**********************************/
 Error __cmodules_string_concat(String S, const Char* s) {
-	
-#ifdef __CMODULES_ERROR_CHECK
+
+    #ifdef __CMODULES_ERROR_CHECK
 	if (S == NULL || s == NULL)
 		return (cerror = NULL_ARGUMENT);
-#endif
+    #endif
 
 	size_t s_len  = wcslen(s);
 	size_t newlen = s_len + clen(S);
 	if ((newlen+1) * sizeof(Char) > cmem(S)) {
 		Char* str = calloc(newlen+1, sizeof(Char));
-	#ifdef __CMODULES_ERROR_CHECK
+        #ifdef __CMODULES_ERROR_CHECK
 		if (str == NULL)
 			return (cerror = MALLOC_FAILURE);
-	#endif
+        #endif
 		wcscpy(str, cval(S));
 		wcscat(str, s);
 		free(cval(S));
@@ -476,12 +506,12 @@ Error __cmodules_string_concat(String S, const Char* s) {
 		wcscat(cval(S), s);
 	}
 	clen(S) = newlen;
-	
-#ifdef __CMODULES_ERROR_CHECK
+
+    #ifdef __CMODULES_ERROR_CHECK
 	return (cerror = NO_ERROR);
-#else
+    #else
 	return NO_ERROR;
-#endif
+    #endif
 }
 
 /***********************************************/
@@ -489,21 +519,21 @@ Error __cmodules_string_concat(String S, const Char* s) {
 /***********************************************/
 Error __cmodules_string_insert(String S, const Char* s, size_t pos) {
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if (S == NULL || s == NULL)
 		return (cerror = NULL_ARGUMENT);
 	if (pos > clen(S))
 		return (cerror = BOUNDS_VIOLATION);
-#endif
+    #endif
 
 	size_t s_len  = wcslen(s);
 	size_t newlen = s_len + clen(S);
 	if ((newlen+1) * sizeof(Char) > cmem(S)) {
 		Char* str = calloc(newlen+1, sizeof(Char));
-	#ifdef __CMODULES_ERROR_CHECK
+        #ifdef __CMODULES_ERROR_CHECK
 		if (str == NULL)
 			return (cerror = MALLOC_FAILURE);
-	#endif
+        #endif
 		wcsncpy(str, cval(S), pos);
 		wcscpy(str+pos, s);
 		wcsncpy(str+pos+s_len, cval(S)+pos, clen(S)-pos);
@@ -517,11 +547,11 @@ Error __cmodules_string_insert(String S, const Char* s, size_t pos) {
 	}
 	clen(S) = newlen;
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	return (cerror = NO_ERROR);
-#else
+    #else
 	return NO_ERROR;
-#endif
+    #endif
 }
 
 /******************************************************/
@@ -529,10 +559,10 @@ Error __cmodules_string_insert(String S, const Char* s, size_t pos) {
 /******************************************************/
 Error __cmodules_string_fill(String S, const Char* s) {
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if (S == NULL || s == NULL)
 		return (cerror = NULL_ARGUMENT);
-#endif
+    #endif
 
 	size_t s_len = wcslen(s);
 	size_t S_len = cmem(S)/sizeof(Char) - 1;
@@ -544,11 +574,11 @@ Error __cmodules_string_fill(String S, const Char* s) {
 	}
 	clen(S) = S_len;
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	return (cerror = NO_ERROR);
-#else
+    #else
 	return NO_ERROR;
-#endif
+    #endif
 }
 
 /********************************/
@@ -556,73 +586,73 @@ Error __cmodules_string_fill(String S, const Char* s) {
 /********************************/
 Error __cmodules_string_clear(String S) {
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if (S == NULL)
 		return (cerror = NULL_ARGUMENT);
-#endif
+    #endif
 
 	wmemset(cval(S), L'\0', cmem(S)/sizeof(Char));
 	clen(S) = 0;
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	return (cerror = NO_ERROR);
-#else
+    #else
 	return NO_ERROR;
-#endif
+    #endif
 }
-	
+
 /*****************************************************************/
 /*** Applies filter function fun to the characters of String S ***/
 /*****************************************************************/
 Error __cmodules_string_filter(String S, bool (*fun)(Char)) {
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if (S == NULL || fun == NULL)
 		return (cerror = NULL_ARGUMENT);
-#endif
+    #endif
 
 	Char* str = calloc(cmem(S),1);
 	size_t newlen = 0;
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	if (str == NULL)
 		return (cerror = MALLOC_FAILURE);
-#endif
+    #endif
 
 	foreach(c,S) {
 		if (fun(*c)) {
 			str[newlen++] = *c;
 		}
 	}
-	
+
 	free(cval(S));
 	cval(S) = str;
 	clen(S) = newlen;
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	return (cerror = NO_ERROR);
-#else
+    #else
 	return NO_ERROR;
-#endif
+    #endif
 }
 
 /**************************************************************************/
 /*** Maps characters in String S to ones defined by mapping function fun***/
 /**************************************************************************/
 Error __cmodules_string_map(String S, Char (*fun)(Char)) {
-	
-#ifdef __CMODULES_ERROR_CHECK
+
+    #ifdef __CMODULES_ERROR_CHECK
 	if (S == NULL || fun == NULL)
 		return (cerror = NULL_ARGUMENT);
-#endif
+    #endif
 
 	for_range(i,clen(S),1) {
 		cval(S)[i] = fun(cval(S)[i]);
 	}
 
-#ifdef __CMODULES_ERROR_CHECK
+    #ifdef __CMODULES_ERROR_CHECK
 	return (cerror = NO_ERROR);
-#else
+    #else
 	return NO_ERROR;
-#endif
+    #endif
 }
 
