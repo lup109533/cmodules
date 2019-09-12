@@ -1,7 +1,7 @@
 #ifndef __CMODULES_MULTI_RETURN__
 #define __CMODULES_MULTI_RETURN__
 
-/** Macros to facilitate multiple-value returns from functions **/
+/** Macros to facilitate multiple-value returns from functions (up to 5 values). **/
 
 // 2 values
 #define multi_def(T1, T2) struct {T1 _1; T2 _2;}

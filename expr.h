@@ -4,6 +4,10 @@
 #include "types.h"
 #include "cmio.h"
 
+/** Simple symbolic expression solver that can solve expressions of arbitrary type.
+ ** User-defined types should provide their own library of functions.
+ **/
+
 typedef enum {
     INTEGER_CONSTANT,
     REAL_CONSTANT,

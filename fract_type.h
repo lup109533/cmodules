@@ -1,6 +1,8 @@
 #ifndef __CMODULES_FRACTTYPE__
 #define __CMODULES_FRACTTYPE__
 
+/** Defines fractional type to represent fractional values with infinite precision. **/
+
 #include "types.h"
 
 typedef struct {
